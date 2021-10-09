@@ -1,5 +1,6 @@
 const express = require('express');
 const { isLoggedIn, isNotLoggedIn } = require('./middlewares');
+const { Post, User } = require('../models');
 
 const router = express.Router();
 
@@ -18,12 +19,25 @@ router.get('/join', isNotLoggedIn, (req,res) =>{
 	res.render('join',{title: '회원가입'});
 }); // 로그인 안된 상태에서만 실행
 
-router.get('/',(req,res) =>{
-	const twits = [];
-	res.render('main',{
+
+router.get('/', async(req,res,next) => {
+	try {
+		const twits = []
+		const posts = await Post.findAll({
+			include: {
+				model: User,
+				attributes: ['id', 'nick'],
+			},
+			order: [['createdAt', 'DESC']],
+		})
+		res.render('main',{
 		title: 'NodeBird',
-		twits,
-	});
+		twits: posts,
+		});
+	} catch (err) {
+		console.error(err);
+		next(err);
+	}
 });
 
 module.exports = router;
